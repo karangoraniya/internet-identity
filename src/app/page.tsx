@@ -4,7 +4,8 @@ import React, { useEffect, useState } from 'react'
 import { AuthClient } from "@dfinity/auth-client"
 import { Actor, HttpAgent, Identity } from '@dfinity/agent';
 import { idlFactory } from '@/utils/blockbolt.did'
-import { _SERVICE as MyService } from '@/utils/blockbolt.did'; // Adjust the path to your did.js
+import { idlFactory as ICRC } from '@/utils/ledger.did'
+import { _SERVICE as MyService } from '@/utils/blockbolt.did';
 import { Principal } from '@dfinity/principal';
 import { Button } from "@/components/ui/button"
 
@@ -31,7 +32,7 @@ export default function Home() {
         const identity = await client.getIdentity();
         setIdentity(identity);
         const agent = new HttpAgent({ identity });
-        const actor = Actor.createActor(idlFactory, { agent, canisterId: blockBoltcanisterId });
+        const actor = Actor.createActor(ICRC, { agent, canisterId: blockBoltcanisterId });
         setActor(actor);
       }
     };
@@ -49,19 +50,19 @@ export default function Home() {
           console.log(identity.getPrincipal().toString());
 
           const agent = new HttpAgent({ identity });
-          const actor = Actor.createActor(idlFactory, { agent, canisterId: blockBoltcanisterId });
+          const actor = Actor.createActor(ICRC, { agent, canisterId: blockBoltcanisterId });
 
           setActor(actor);
 
-          // Perform the transfer after successful login
+          // Perform the approve after successful login &
           // await transfer(actor);
-          // await approve(actor);
+          await approve(actor);
         },
       });
     }
   };
 
-  const addr = 'rjjpj-6zdeu-ifzlc-5b7ip-g2uyw-jtpyc-fevjt-tvqcs-dii2o-shr5f-xae'; // Replace with actual Principal ID
+  const addr = 'rjjpj-6zdeu-ifzlc-5b7ip-g2uyw-jtpyc-fevjt-tvqcs-dii2o-shr5f-xae';
 
 
   const transfer = async (actor: any) => {
@@ -70,7 +71,7 @@ export default function Home() {
         owner: Principal.fromText(addr!),
         subaccount: [],
       };
-      const amount = BigInt(10000); // Example amount
+      const amount = BigInt(10000);
       const result = await actor.transfer({ toAccount, amount });
       console.log(result);
     }
@@ -79,7 +80,7 @@ export default function Home() {
   const fetchAddressData = async () => {
     if (actor) {
 
-      const data = await actor.getAddressData(); // Example method
+      const data = await actor.getAddressData();
       setAddressData(data);
     }
   };
@@ -112,7 +113,7 @@ export default function Home() {
           amount: BigInt(10000),
         });
       } catch (error: any) {
-        console.error('Error in randomTransfers:', error);
+        console.error('Error in randomTransfers:', error.message);
         setErrorMessage(
           error.message || 'An error occurred during the transfer.'
         );
@@ -125,12 +126,20 @@ export default function Home() {
     <div className="flex flex-row">
       <Button onClick={login}>Login</Button>
       <Button onClick={transfer}>Transfer</Button>
+      <Button onClick={approve}>Approve</Button>
       <Button onClick={fetchAddressData}>Fetch Address Data</Button>
 
       {addressData && (
         <div>
           <h3>Address Data</h3>
           <pre>{JSON.stringify(addressData, null, 2)}</pre>
+        </div>
+      )}
+
+
+      {errorMessage && (
+        <div>
+          <p>Error: {errorMessage}</p>
         </div>
       )}
     </div>
