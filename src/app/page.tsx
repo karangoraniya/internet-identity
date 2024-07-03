@@ -18,20 +18,19 @@ export default function Home() {
   const [greeting, setGreeting] = useState<string>("");
   const [actor, setActor] = useState<any>(null);
   const [authClient, setAuthClient] = useState<AuthClient | null>(null);
-  const [identiy, setIdentiy] = useState<Identity | null>(null);
+  const [identity, setIdentity] = useState<Identity | null>(null);
   const [addressData, setAddressData] = useState<any>(null);
   const [errorMessage, setErrorMessage] = useState("")
 
   useEffect(() => {
-
     const initAuth = async () => {
       const client = await AuthClient.create();
       setAuthClient(client);
 
       if (await client.isAuthenticated()) {
         const identity = await client.getIdentity();
-        setIdentiy(identity);
-        const agent = new HttpAgent({ identity: identity });
+        setIdentity(identity);
+        const agent = new HttpAgent({ identity });
         const actor = Actor.createActor(idlFactory, { agent, canisterId: blockBoltcanisterId });
         setActor(actor);
       }
@@ -46,13 +45,17 @@ export default function Home() {
         maxTimeToLive: BigInt(7 * 24 * 60 * 60 * 1000 * 1000 * 1000),
         onSuccess: async () => {
           const identity = await authClient.getIdentity();
-          setIdentiy(identity);
+          setIdentity(identity);
           console.log(identity.getPrincipal().toString());
 
           const agent = new HttpAgent({ identity });
           const actor = Actor.createActor(idlFactory, { agent, canisterId: blockBoltcanisterId });
 
           setActor(actor);
+
+          // Perform the transfer after successful login
+          // await transfer(actor);
+          // await approve(actor);
         },
       });
     }
@@ -61,7 +64,7 @@ export default function Home() {
   const addr = 'rjjpj-6zdeu-ifzlc-5b7ip-g2uyw-jtpyc-fevjt-tvqcs-dii2o-shr5f-xae'; // Replace with actual Principal ID
 
 
-  const transfer = async () => {
+  const transfer = async (actor: any) => {
     if (actor) {
       const toAccount = {
         owner: Principal.fromText(addr!),
@@ -75,52 +78,45 @@ export default function Home() {
 
   const fetchAddressData = async () => {
     if (actor) {
-      // Replace with your canister method to fetch address data
+
       const data = await actor.getAddressData(); // Example method
       setAddressData(data);
     }
   };
 
-  const approve = async () => {
-    try {
-      const canisterId = nnsCanisterId;
-      console.log(canisterId, 'demo');
+  const approve = async (actor: any) => {
+    if (actor) {
+      try {
+        const canisterId = nnsCanisterId;
+        console.log(canisterId, 'demo');
 
-      const identity = await client.getIdentity();
-      const agent = new HttpAgent({ identity: identity });
+        const text = 'My first BTC transfer';
+        const memo = Array.from(new TextEncoder().encode(text));
 
-      const actor = Actor.createActor(idlFactory, { agent, canisterId: blockBoltcanisterId });
-
-
-      const text = 'My first BTC transfer';
-      const memo = Array.from(new TextEncoder().encode(text));
-
-      console.log(actor, 'actor');
+        console.log(actor, 'actor');
 
 
-      const exmple = await actor.icrc2_approve({
-        from: Principal.fromText('rjjpj-6zdeu-ifzlc-5b7ip-g2uyw-jtpyc-fevjt-tvqcs-dii2o-shr5f-xae'),
-        // from: Principal.fromText(
-        //   '3zm3c-qhy2j-5vvce-il3fu-il4ai-wf5fs-bwwjp-dbary-numis-kgxui-rae'
-        // ),
+        const exmple = await actor.icrc2_approve({
+          from: Principal.fromText('rjjpj-6zdeu-ifzlc-5b7ip-g2uyw-jtpyc-fevjt-tvqcs-dii2o-shr5f-xae'),
 
-        spender: {
-          owner: Principal.fromText('bza44-ciaaa-aaaan-qlvna-cai'),
-          subaccount: [],
-        },
-        fee: [],
-        memo: [memo],
-        from_subaccount: [],
-        created_at_time: [],
-        expires_at: [],
-        expected_allowance: [],
-        amount: BigInt(10000),
-      });
-    } catch (error: any) {
-      console.error('Error in randomTransfers:', error);
-      setErrorMessage(
-        error.message || 'An error occurred during the transfer.'
-      );
+          spender: {
+            owner: Principal.fromText('bza44-ciaaa-aaaan-qlvna-cai'),
+            subaccount: [],
+          },
+          fee: [],
+          memo: [memo],
+          from_subaccount: [],
+          created_at_time: [],
+          expires_at: [],
+          expected_allowance: [],
+          amount: BigInt(10000),
+        });
+      } catch (error: any) {
+        console.error('Error in randomTransfers:', error);
+        setErrorMessage(
+          error.message || 'An error occurred during the transfer.'
+        );
+      }
     }
   };
 
